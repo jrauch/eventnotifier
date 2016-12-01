@@ -5,10 +5,7 @@ import time
 from Foundation import NSObject, NSAppleScript, NSBundle
 
 from AppKit import NSWorkspace, NSWorkspaceDidWakeNotification
-#NSWorkspace = AppKit.NSWorkspace
-#NSWorkspaceDidWakeNotification = AppKit.NSWorkspaceDidWakeNotification
-
-import PyObjCTools.AppHelper as AppHelper
+from PyObjCTools import AppHelper
 
 info = NSBundle.mainBundle().infoDictionary()
 info["LSBackgroundOnly"] = "1"
@@ -31,10 +28,6 @@ class NotificationHandler(NSObject):
     def shellHandler_(self, aNotification):
         print "Shell! " + self.script
         return
-        
-    def handleWakeNotification_(self, aNotification):
-        print "woke!"
-
 
 class NotificationManager():
     def __init__(self):
