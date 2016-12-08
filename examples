@@ -1,0 +1,67 @@
+# Take an action is an application launches
+# In this case, if audio is't muted when calculator starts, mute it...followed by unmuting headphones when it exits if they were unmuted before
+nm.register_handler(NSWorkspaceDidLaunchApplicationNotification, "python", '''
+from subprocess import check_output
+
+getmute='osascript -e "output muted of (get volume settings)"'
+setmute='osascript -e "set volume output muted true"'
+
+o = check_output(getmute, shell=True)
+
+if 'false' in o:
+        check_output(setmute, shell=True)
+        global SETMUTE
+        SETMUTE = True
+
+
+''', "NSApplicationBundleIdentifier", "com.apple.calculator")
+nm.register_handler(NSWorkspaceDidTerminateApplicationNotification, "python", '''
+from subprocess import check_output
+
+unsetmute='osascript -e "set volume output muted false"'
+if SETMUTE == True:
+    check_output(unsetmute, shell=True)
+    SETMUTE = False
+''', "NSApplicationBundleIdentifier", "com.apple.calculator")
+
+
+
+
+# This detects a change in monitor on wake from sleep, and changes the behavior of autohide
+nm.register_handler(NSWorkspaceDidWakeNotification, "applescript", '''
+on run eventArgs	
+	set displayName to (do shell script "system_profiler SPDisplaysDataType|grep -q 'Cinema Display';echo $?")
+	if displayName is "0" then
+		tell application "System Events" to set the autohide of the dock preferences to false
+	else
+		tell application "System Events" to set the autohide of the dock preferences to true
+	end if
+end run
+''')
+
+
+# This uses the NSDistributedNotificationCenter instead of the NSNotificationCenter to monitor for screen lock and unlock.
+# If you lock and audio isn't muted, mute it.  On unlock, if the script muted it, unmute it. 
+nm.register_distributed_handler("com.apple.screenIsLocked", "python", '''
+from subprocess import check_output
+
+getmute='osascript -e "output muted of (get volume settings)"'
+setmute='osascript -e "set volume output muted true"'
+
+o = check_output(getmute, shell=True)
+
+if 'false' in o:
+        check_output(setmute, shell=True)
+        global SETMUTE
+        SETMUTE = True
+
+
+''')
+nm.register_distributed_handler("com.apple.screenIsUnlocked", "python", '''
+from subprocess import check_output
+
+unsetmute='osascript -e "set volume output muted false"'
+if SETMUTE == True:
+    check_output(unsetmute, shell=True)
+    SETMUTE = False
+''')
