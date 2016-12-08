@@ -25,9 +25,7 @@ class NotificationHandler(NSObject):
         
     def pythonHandler_(self, aNotification):
         #print aNotification.userInfo()["NSApplicationBundleIdentifier"]
-        print "triggered"
         if self.userinfokey == None or aNotification.userInfo()[self.userinfokey] == self.userinfomatch:
-            print "YES"
             try:
                 exec(self.script)
             except:
