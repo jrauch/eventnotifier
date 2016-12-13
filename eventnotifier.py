@@ -76,10 +76,12 @@ class NotificationManager():
     def run(self):
         AppHelper.runConsoleEventLoop()
 
-nm = NotificationManager()
-nm.register_distributed_handler("com.apple.screenIsLocked", "python", '''
-from subprocess import check_output
 
+if __name__ == '__main__':
+    nm = NotificationManager()
+    nm.register_distributed_handler("com.apple.screenIsLocked", "python", '''
+from subprocess import check_output
+    
 getmute='osascript -e "output muted of (get volume settings)"'
 setmute='osascript -e "set volume output muted true"'
 
@@ -89,26 +91,24 @@ SETMUTE = False
 if 'false' in o:
         check_output(setmute, shell=True)
         SETMUTE = True
-
-
-''')
-nm.register_distributed_handler("com.apple.screenIsUnlocked", "python", '''
+        ''')
+    nm.register_distributed_handler("com.apple.screenIsUnlocked", "python", '''
 from subprocess import check_output
-
+    
 unsetmute='osascript -e "set volume output muted false"'
 if SETMUTE == True:
     check_output(unsetmute, shell=True)
     SETMUTE = False
-''')
-nm.register_handler(NSWorkspaceDidWakeNotification, "applescript", '''
+    ''')
+    nm.register_handler(NSWorkspaceDidWakeNotification, "applescript", '''
 on run eventArgs	
-	set displayName to (do shell script "system_profiler SPDisplaysDataType|grep -q 'Cinema Display';echo $?")
+set displayName to (do shell script "system_profiler SPDisplaysDataType|grep -q 'Cinema Display';echo $?")
 	if displayName is "0" then
-		tell application "System Events" to set the autohide of the dock preferences to false
-	else
-		tell application "System Events" to set the autohide of the dock preferences to true
+        tell application "System Events" to set the autohide of the dock preferences to false
+    else
+	    tell application "System Events" to set the autohide of the dock preferences to true
 	end if
 end run
-''')
+    ''')
 
-nm.run()
+    nm.run()
