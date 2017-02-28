@@ -28,7 +28,7 @@ class EventNotifier():
             notification_events = os.listdir(os.path.expanduser(path))
         except OSError:
             return
-        
+
         for event in notification_events:
             event_path = os.path.expanduser(path)+"/"+event
             handlers = os.listdir(event_path)
@@ -37,13 +37,7 @@ class EventNotifier():
             for handler in handlers:
                 buffer = open(handler).read()
                 file_extension = os.path.splitext(handler)[1][1:]
-                #print event+" "+file_extension
-                #print buffer
                 registration(event, file_extension, buffer)
-
-
-    def load_notification_configs(self):
-        return
 
 class NotificationHandler(NSObject):
     def setup(self, event, script, userinfokey=None, userinfomatch=None):
@@ -62,7 +56,6 @@ class NotificationHandler(NSObject):
         self.pythonHandler_(aNotification)
 
     def pythonHandler_(self, aNotification):
-        #print aNotification.userInfo()["NSApplicationBundleIdentifier"]
         if self.userinfokey == None or aNotification.userInfo()[self.userinfokey] == self.userinfomatch:
             try:
                 exec(self.script)
