@@ -7,8 +7,43 @@ from Foundation import NSObject, NSAppleScript, NSBundle, NSDistributedNotificat
 from AppKit import NSWorkspace, NSWorkspaceDidWakeNotification, NSWorkspaceDidLaunchApplicationNotification, NSWorkspaceDidTerminateApplicationNotification
 from PyObjCTools import AppHelper
 
+import os
+
 info = NSBundle.mainBundle().infoDictionary()
 info["LSBackgroundOnly"] = "1"
+
+class EventNotifier():
+    def __init__(self, distributed_path, notification_path):
+        self.distributed_path=distributed_path
+        self.notification_path=notification_path
+        self.notification_manager=NotificationManager()
+
+    def run(self):
+        self.load_configs(self.distributed_path, self.notification_manager.register_distributed_handler)
+        self.load_configs(self.notification_path, self.notification_manager.register_handler)
+        self.notification_manager.run()
+
+    def load_configs(self, path, registration):
+        try:
+            notification_events = os.listdir(os.path.expanduser(path))
+        except OSError:
+            return
+        
+        for event in notification_events:
+            event_path = os.path.expanduser(path)+"/"+event
+            handlers = os.listdir(event_path)
+            handlers = [ os.path.expanduser(event_path) + "/" + a for a in handlers]
+
+            for handler in handlers:
+                buffer = open(handler).read()
+                file_extension = os.path.splitext(handler)[1][1:]
+                #print event+" "+file_extension
+                #print buffer
+                registration(event, file_extension, buffer)
+
+
+    def load_notification_configs(self):
+        return
 
 class NotificationHandler(NSObject):
     def setup(self, event, script, userinfokey=None, userinfomatch=None):
@@ -22,7 +57,10 @@ class NotificationHandler(NSObject):
         s = NSAppleScript.alloc().initWithSource_(self.script)
         s.executeAndReturnError_(None)
         return
-        
+       
+    def pyHandler_(self, aNotification):
+        self.pythonHandler_(aNotification)
+
     def pythonHandler_(self, aNotification):
         #print aNotification.userInfo()["NSApplicationBundleIdentifier"]
         if self.userinfokey == None or aNotification.userInfo()[self.userinfokey] == self.userinfomatch:
@@ -31,7 +69,10 @@ class NotificationHandler(NSObject):
             except:
                 print "error in script "+self.script
         return
-        
+    
+    def shHandler_(self, aNotification):
+        self.shellHandler(aNotification)
+
     def shellHandler_(self, aNotification):
         print "Shell! " + self.script
         return
@@ -78,37 +119,5 @@ class NotificationManager():
 
 
 if __name__ == '__main__':
-    nm = NotificationManager()
-    nm.register_distributed_handler("com.apple.screenIsLocked", "python", '''
-from subprocess import check_output
-    
-getmute='osascript -e "output muted of (get volume settings)"'
-setmute='osascript -e "set volume output muted true"'
-
-o = check_output(getmute, shell=True)
-global SETMUTE
-SETMUTE = False
-if 'false' in o:
-        check_output(setmute, shell=True)
-        SETMUTE = True
-        ''')
-    nm.register_distributed_handler("com.apple.screenIsUnlocked", "python", '''
-from subprocess import check_output
-    
-unsetmute='osascript -e "set volume output muted false"'
-if SETMUTE == True:
-    check_output(unsetmute, shell=True)
-    SETMUTE = False
-    ''')
-    nm.register_handler(NSWorkspaceDidWakeNotification, "applescript", '''
-on run eventArgs	
-set displayName to (do shell script "system_profiler SPDisplaysDataType|grep -q 'Cinema Display';echo $?")
-	if displayName is "0" then
-        tell application "System Events" to set the autohide of the dock preferences to false
-    else
-	    tell application "System Events" to set the autohide of the dock preferences to true
-	end if
-end run
-    ''')
-
-    nm.run()
+    en = EventNotifier("~/.events/dNotifications", "~/.events/Notifications")
+    en.run()

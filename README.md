@@ -18,3 +18,6 @@ https://developer.apple.com/reference/foundation/nsnotification.name
 For NSDistributedNotificationCenter, it's not so easy - so I've included a
 small script (dn.py) that will watch for all NSDNC events, and print them out 
 as it sees them.
+
+# setup
+eventnotifier will read ~/.events/ for distributed and regular notification events.  See ./events for samples.
