@@ -8,6 +8,7 @@ from AppKit import NSWorkspace, NSWorkspaceDidWakeNotification, NSWorkspaceDidLa
 from PyObjCTools import AppHelper
 
 import os
+from subprocess import call
 
 info = NSBundle.mainBundle().infoDictionary()
 info["LSBackgroundOnly"] = "1"
@@ -19,58 +20,43 @@ class EventNotifier():
         self.notification_manager=NotificationManager()
 
     def run(self):
-        self.load_configs(self.distributed_path, self.notification_manager.register_distributed_handler)
-        self.load_configs(self.notification_path, self.notification_manager.register_handler)
+        self.load_events(self.notification_path, self.notification_manager.register_handler)
+        self.load_events(self.distributed_path, self.notification_manager.register_distributed_handler)
+
         self.notification_manager.run()
 
-    def load_configs(self, path, registration):
+    def load_events(self, path, registration):
         try:
             notification_events = os.listdir(os.path.expanduser(path))
         except OSError:
             return
 
         for event in notification_events:
-            event_path = os.path.expanduser(path)+"/"+event
-            handlers = os.listdir(event_path)
-            handlers = [ os.path.expanduser(event_path) + "/" + a for a in handlers]
+            event_path = os.path.expanduser(path) + "/" + event
+            print "Registering event {} at path {}".format(event, event_path)
+            registration(event, event_path)
 
-            for handler in handlers:
-                buffer = open(handler).read()
-                file_extension = os.path.splitext(handler)[1][1:]
-                registration(event, file_extension, buffer)
-
-class NotificationHandler(NSObject):
-    def setup(self, event, script, userinfokey=None, userinfomatch=None):
-        super(NotificationHandler, self).__init__()
+class NotificationHandler():
+    def __init__(self, event, path):
         self.event = event
-        self.script = script
-        self.userinfokey = userinfokey
-        self.userinfomatch = userinfomatch
-    
-    def applescriptHandler_(self, aNotification):
-        s = NSAppleScript.alloc().initWithSource_(self.script)
-        s.executeAndReturnError_(None)
-        return
-       
-    def pyHandler_(self, aNotification):
-        self.pythonHandler_(aNotification)
+        self.path = path
 
-    def pythonHandler_(self, aNotification):
-        if self.userinfokey == None or aNotification.userInfo()[self.userinfokey] == self.userinfomatch:
-            try:
-                exec(self.script)
-            except:
-                print "error in script "+self.script
-        return
-    
-    def shHandler_(self, aNotification):
-        self.shellHandler(aNotification)
+    def event_handler_(self, aNotification):
+        for proc in self.get_script_paths():
+            rval = call(proc)
+            print "{} returned {}".format(proc, rval)
 
-    def shellHandler_(self, aNotification):
-        print "Shell! " + self.script
         return
 
+    def get_script_paths(self):
+        notification_event_scripts = os.listdir(self.path)
+        notification_event_scripts = [self.path + "/" + x for x in notification_event_scripts]
+        return notification_event_scripts
 
+# why is there a seperate class for distbuted if it's just a pass?
+# because eventually i'll have the ability to remove handlers and this
+# will let me have a single list while being able to cancel different types without
+# having to keep 2 lists.
 class DistributedNotificationHandler(NotificationHandler):
     pass
 
@@ -80,29 +66,26 @@ class NotificationManager():
         self.ws = NSWorkspace.sharedWorkspace()
         self.nc = self.ws.notificationCenter()
         self.dnc = NSDistributedNotificationCenter.defaultCenter()
-        
         return
         
-    def register_handler(self, event, script_type, script, userinfokey=None, userinfomatch=None):
-        nh = NotificationHandler.new()
-        nh.setup(event, script, userinfokey, userinfomatch)
+    def register_handler(self, event, path):
+        nh = NotificationHandler(event, path)
         self.notification_handlers.append(nh)
-        
+
         self.nc.addObserver_selector_name_object_(
             self.notification_handlers[-1],
-            script_type + "Handler:",
+            "event_handler:",
             event,
             None)
         return
     
-    def register_distributed_handler(self, event, script_type, script, userinfokey=None, userinfomatch=None):
-        nh = DistributedNotificationHandler.new()
-        nh.setup(event, script, userinfokey, userinfomatch)
+    def register_distributed_handler(self, event, path):
+        nh = DistributedNotificationHandler(event, path)
         self.notification_handlers.append(nh)
         
         self.dnc.addObserver_selector_name_object_(
             self.notification_handlers[-1],
-            script_type + "Handler:",
+            "event_handler:",
             event,
             None)
         return

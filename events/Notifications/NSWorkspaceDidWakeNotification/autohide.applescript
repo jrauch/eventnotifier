@@ -1,3 +1,4 @@
+#!/usr/bin/osascript
 on run eventArgs	
 set displayName to (do shell script "system_profiler SPDisplaysDataType|grep -q 'Cinema Display';echo $?")
 	if displayName is "0" then
