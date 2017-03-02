@@ -1,8 +1,7 @@
 # eventnotifier
 
 Eventnotifier is a simple Python script that uses PyObjC to run arbitrary
-scripts - currently Applescript or Python - on either NSNotificationCenter or
-NSDistributedNotificationCenter events.
+scripts on either NSNotificationCenter or NSDistributedNotificationCenter events.
 
 Documentation is available here:
 https://developer.apple.com/reference/foundation/nsnotificationcenter
