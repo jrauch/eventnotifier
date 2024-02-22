@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import time
 
 from Foundation import NSObject, NSAppleScript, NSBundle, NSDistributedNotificationCenter
@@ -7,7 +8,7 @@ from PyObjCTools import AppHelper
 
 class NotificationHandler(NSObject):
 	def handler_(self, aNotification):
-		print aNotification.name()
+		print(aNotification.name())
 		return
 
 dnc = NSDistributedNotificationCenter.defaultCenter()

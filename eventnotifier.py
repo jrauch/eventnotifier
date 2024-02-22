@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import time
 
@@ -33,7 +33,7 @@ class EventNotifier():
 
         for event in notification_events:
             event_path = os.path.expanduser(path) + "/" + event
-            print "Registering event {} at path {}".format(event, event_path)
+            print(f"Registering event {event} at path {event_path}")
             registration(event, event_path)
 
 class NotificationHandler():
@@ -44,7 +44,7 @@ class NotificationHandler():
     def event_handler_(self, aNotification):
         for proc in self.get_script_paths():
             rval = call(proc)
-            print "{} returned {}".format(proc, rval)
+            print(f"{proc} returned {rval}")
 
         return
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from subprocess import check_output
     
 getmute='osascript -e "output muted of (get volume settings)"'
